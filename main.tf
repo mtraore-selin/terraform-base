@@ -87,7 +87,7 @@ resource "aws_security_group" "mtc_security_group" {
 
 
 resource "aws_key_pair" "mtc_auth" {
-  key_name   = "mtckey"
+  key_name = "mtckey"
   #public_key = file("~/.ssh/mtckey.pub")
   public_key = file("${path.module}/keys/mtckey.pub")
 }
