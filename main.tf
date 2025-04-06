@@ -87,9 +87,13 @@ resource "aws_security_group" "mtc_security_group" {
 
 
 resource "aws_key_pair" "mtc_auth" {
-  key_name = "mtckey"
+  key_name = "mtckey-${random_id.key_suffix.hex}"
   #public_key = file("~/.ssh/mtckey.pub")
   public_key = file("${path.module}/keys/mtckey.pub")
+}
+
+resource "random_id" "key_suffix" {
+  byte_length = 4
 }
 
 resource "aws_instance" "prod_node" {
