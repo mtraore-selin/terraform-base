@@ -88,7 +88,8 @@ resource "aws_security_group" "mtc_security_group" {
 
 resource "aws_key_pair" "mtc_auth" {
   key_name   = "mtckey"
-  public_key = file("~/.ssh/mtckey.pub")
+  #public_key = file("~/.ssh/mtckey.pub")
+  public_key = file("${path.module}/keys/mtckey.pub")
 }
 
 resource "aws_instance" "prod_node" {
@@ -112,7 +113,7 @@ resource "aws_instance" "prod_node" {
     command = templatefile("${var.host_os}-ssh-config.tpl", {
       hostname     = self.public_ip,
       user         = "ubuntu",
-      identityfile = "~/.ssh/mtckey"
+      identityfile = "${path.module}/keys/mtckey.pub"
     })
     interpreter = var.host_os == "linux" ? ["bash", "-c"] : ["Powershell", "-Command"]
   }
