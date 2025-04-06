@@ -123,15 +123,23 @@ resource "aws_instance" "prod_node" {
 resource "aws_s3_bucket" "todo_app_bucket" {
   bucket = "todo-app-prod"
 
-  website {
-    index_document = "index.html"
-    error_document = "index.html"
-  }
-
   tags = {
     Name = "TodoAppBucket"
   }
 }
+
+resource "aws_s3_bucket_website_configuration" "todo_app_website" {
+  bucket = aws_s3_bucket.todo_app_bucket.id
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "index.html"
+  }
+}
+
 
 resource "aws_s3_bucket_policy" "todo_app_policy" {
   bucket = aws_s3_bucket.todo_app_bucket.id
