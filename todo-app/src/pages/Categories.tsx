@@ -219,8 +219,8 @@ const Categories = () => {
         {user.categories.length > 0 ? (
           <CategoryElementsContainer>
             {user.categories.map((category) => {
-              const categoryTasks = user.tasks.filter((task) =>
-                task.category?.some((cat) => cat.id === category.id),
+              const categoryTasks = user.tasks.filter(
+                (task) => task.category?.some((cat) => cat.id === category.id),
               );
 
               const completedTasksCount = categoryTasks.reduce(
@@ -309,8 +309,8 @@ const Categories = () => {
                 name == ""
                   ? undefined
                   : !nameError
-                    ? `${name.length}/${CATEGORY_NAME_MAX_LENGTH}`
-                    : nameError
+                  ? `${name.length}/${CATEGORY_NAME_MAX_LENGTH}`
+                  : nameError
               }
             />
           </InputThemeProvider>
@@ -409,8 +409,8 @@ const Categories = () => {
                   editNameError
                     ? editNameError
                     : editName.length === 0
-                      ? "Category name is required"
-                      : `${editName.length}/${CATEGORY_NAME_MAX_LENGTH}`
+                    ? "Category name is required"
+                    : `${editName.length}/${CATEGORY_NAME_MAX_LENGTH}`
                 }
               />
               <ColorPicker

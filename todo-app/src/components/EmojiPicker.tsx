@@ -251,8 +251,8 @@ export const CustomEmojiPicker = ({ emoji, setEmoji, color, name, type }: EmojiP
         emojisStyle === EmojiStyle.NATIVE && systemInfo.os === "iOS"
           ? 64
           : emojisStyle === EmojiStyle.NATIVE
-            ? 48
-            : 64;
+          ? 48
+          : 64;
 
       return (
         <EmojiElement key={currentEmoji}>

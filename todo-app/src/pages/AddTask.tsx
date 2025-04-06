@@ -152,8 +152,8 @@ const AddTask = () => {
               name === ""
                 ? undefined
                 : !nameError
-                  ? `${name.length}/${TASK_NAME_MAX_LENGTH}`
-                  : nameError
+                ? `${name.length}/${TASK_NAME_MAX_LENGTH}`
+                : nameError
             }
           />
           <StyledInput
@@ -171,8 +171,8 @@ const AddTask = () => {
               description === ""
                 ? undefined
                 : !descriptionError
-                  ? `${description.length}/${DESCRIPTION_MAX_LENGTH}`
-                  : descriptionError
+                ? `${description.length}/${DESCRIPTION_MAX_LENGTH}`
+                : descriptionError
             }
           />
           <StyledInput

@@ -229,8 +229,8 @@ export const TasksList: React.FC = () => {
     // Calculate category counts
     const counts: { [categoryId: UUID]: number } = {};
     uniqueCategories.forEach((category) => {
-      const categoryTasks = tasks.filter((task) =>
-        task.category?.some((cat) => cat.id === category.id),
+      const categoryTasks = tasks.filter(
+        (task) => task.category?.some((cat) => cat.id === category.id),
       );
       counts[category.id] = categoryTasks.length;
     });

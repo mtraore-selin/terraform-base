@@ -1,0 +1,24 @@
+repos:
+  # Terraform hooks
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.77.0
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_validate
+
+  # Prettier (for formatting JS/TS/HTML/CSS)
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.0.0
+    hooks:
+      - id: prettier
+        files: \.(js|jsx|ts|tsx|css|scss|json|html|md|yml)$
+
+  # ESLint (optional if you want deeper JS checking)
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        entry: npm run lint
+        language: node
+        types: [javascript, jsx, ts, tsx]
+        pass_filenames: false

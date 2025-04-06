@@ -323,7 +323,9 @@ const StyledAccordion = styled(Accordion)<StyledAccordionProps>`
   border-radius: 16px !important;
   // match border with other inputs
   border: ${({ fontColor }) =>
-    `1px solid ${isDark(fontColor as string) ? "rgba(0, 0, 0, 0.23)" : "rgb(255, 255, 255, 0.23)"}`};
+    `1px solid ${
+      isDark(fontColor as string) ? "rgba(0, 0, 0, 0.23)" : "rgb(255, 255, 255, 0.23)"
+    }`};
   box-shadow: none;
   padding: 6px 0;
   margin: 8px 0;
