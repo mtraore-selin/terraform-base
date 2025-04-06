@@ -109,14 +109,14 @@ resource "aws_instance" "prod_node" {
     Name = "prod-node"
   }
 
-  provisioner "local-exec" {
-    command = templatefile("${var.host_os}-ssh-config.tpl", {
-      hostname     = self.public_ip,
-      user         = "ubuntu",
-      identityfile = "${path.module}/keys/mtckey.pub"
-    })
-    interpreter = var.host_os == "linux" ? ["bash", "-c"] : ["Powershell", "-Command"]
-  }
+  # provisioner "local-exec" {
+  #   command = templatefile("${var.host_os}-ssh-config.tpl", {
+  #     hostname     = self.public_ip,
+  #     user         = "ubuntu",
+  #     identityfile = "${path.module}/keys/mtckey.pub"
+  #   })
+  #   interpreter = var.host_os == "linux" ? ["bash", "-c"] : ["Powershell", "-Command"]
+  # }
 
 
 }
