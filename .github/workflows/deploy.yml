@@ -3,7 +3,7 @@ name: Deploy React App to S3 + Terraform Infra
 on:
   push:
     branches:
-      - main
+      - feat/deploy
 
 jobs:
   terraform:
