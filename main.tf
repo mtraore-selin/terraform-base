@@ -119,3 +119,33 @@ resource "aws_instance" "prod_node" {
 
 
 }
+
+resource "aws_s3_bucket" "todo_app_bucket" {
+  bucket = "todo-app-prod"
+
+  website {
+    index_document = "index.html"
+    error_document = "index.html"
+  }
+
+  tags = {
+    Name = "TodoAppBucket"
+  }
+}
+
+resource "aws_s3_bucket_policy" "todo_app_policy" {
+  bucket = aws_s3_bucket.todo_app_bucket.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject",
+        Effect    = "Allow",
+        Principal = "*",
+        Action    = "s3:GetObject",
+        Resource  = "${aws_s3_bucket.todo_app_bucket.arn}/*"
+      }
+    ]
+  })
+}

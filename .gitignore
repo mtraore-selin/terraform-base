@@ -4,3 +4,7 @@
 *.tfstate
 *.tfstate.backup
 .terraform.lock.hcl
+
+todo-app/node_modules/
+todo-app/dev-dist/
+.vscode
