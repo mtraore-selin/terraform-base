@@ -126,11 +126,15 @@ resource "aws_instance" "prod_node" {
 }
 
 resource "aws_s3_bucket" "todo_app_bucket" {
-  bucket = "todo-app-prod"
+  bucket = "todo-app-prod-${random_id.bucket_suffix.hex}"
 
   tags = {
     Name = "TodoAppBucket"
   }
+}
+
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
 }
 
 resource "aws_s3_bucket_website_configuration" "todo_app_website" {
