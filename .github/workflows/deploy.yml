@@ -18,13 +18,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "18"
-      - run: npm install
-      - run: npm run lint
+      - run: yarn install --frozen-lockfile
+      - run: yarn lint
 
   terraform:
     name: Terraform Format & Validate
     runs-on: ubuntu-latest
     environment: production
+
+    outputs:
+      bucket_name: ${{ steps.export.outputs.bucket_name }}
+      cloudfront_id: ${{ steps.export.outputs.cloudfront_id }}
 
     steps:
       - name: Checkout repository
@@ -55,6 +59,12 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Export Outputs
+        id: export
+        run: |
+          echo "bucket_name=$(terraform output -raw s3_bucket_name)" >> "$GITHUB_OUTPUT"
+          echo "cloudfront_id=$(terraform output -raw cloudfront_distribution_id)" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Deploy React App
@@ -89,18 +99,20 @@ jobs:
 
       - name: Deploy to S3 with proper caching
         run: |
-          aws s3 sync todo-app/dist/ s3://$(terraform output -raw s3_bucket_name)/ \
-            --delete \
-            --cache-control "max-age=31536000,public" \
-            --exclude "index.html" \
-            --exclude "asset-manifest.json"
-          aws s3 sync todo-app/dist/ s3://$(terraform output -raw s3_bucket_name)/ \
-            --delete \
-            --cache-control "no-cache,no-store,must-revalidate" \
-            --include "index.html" \
-            --include "asset-manifest.json"
+          aws s3 sync todo-app/dist s3://todo-app-prod
+        # run: |
+        #   aws s3 sync todo-app/dist/ s3://${{ needs.terraform.outputs.bucket_name }}/ \
+        #     --delete \
+        #     --cache-control "max-age=31536000,public" \
+        #     --exclude "index.html" \
+        #     --exclude "asset-manifest.json"
 
-          # Invalidate CloudFront cache
-          aws cloudfront create-invalidation \
-            --distribution-id $(terraform output -raw cloudfront_distribution_id) \
-            --paths "/*"
+        #   aws s3 sync todo-app/dist/ s3://${{ needs.terraform.outputs.bucket_name }}/ \
+        #     --delete \
+        #     --cache-control "no-cache,no-store,must-revalidate" \
+        #     --include "index.html" \
+        #     --include "asset-manifest.json"
+
+        #   aws cloudfront create-invalidation \
+        #     --distribution-id ${{ needs.terraform.outputs.cloudfront_id }} \
+        #     --paths "/*"
