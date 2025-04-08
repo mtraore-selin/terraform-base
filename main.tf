@@ -87,8 +87,13 @@ resource "aws_security_group" "mtc_security_group" {
 
 
 resource "aws_key_pair" "mtc_auth" {
-  key_name   = "mtckey"
-  public_key = file("~/.ssh/mtckey.pub")
+  key_name = "mtckey-${random_id.key_suffix.hex}"
+  #public_key = file("~/.ssh/mtckey.pub")
+  public_key = file("${path.module}/keys/mtckey.pub")
+}
+
+resource "random_id" "key_suffix" {
+  byte_length = 4
 }
 
 resource "aws_instance" "prod_node" {
@@ -108,52 +113,165 @@ resource "aws_instance" "prod_node" {
     Name = "prod-node"
   }
 
-  provisioner "local-exec" {
-    command = templatefile("${var.host_os}-ssh-config.tpl", {
-      hostname     = self.public_ip,
-      user         = "ubuntu",
-      identityfile = "~/.ssh/mtckey"
-    })
-    interpreter = var.host_os == "linux" ? ["bash", "-c"] : ["Powershell", "-Command"]
-  }
+  # provisioner "local-exec" {
+  #   command = templatefile("${var.host_os}-ssh-config.tpl", {
+  #     hostname     = self.public_ip,
+  #     user         = "ubuntu",
+  #     identityfile = "${path.module}/keys/mtckey.pub"
+  #   })
+  #   interpreter = var.host_os == "linux" ? ["bash", "-c"] : ["Powershell", "-Command"]
+  # }
 
 
 }
 
+# React deployment
 resource "aws_s3_bucket" "todo_app_bucket" {
-  bucket = "todo-app-prod"
-
+  bucket = "todo-app-gmdt-prod-01"
   tags = {
     Name = "TodoAppBucket"
   }
 }
 
-resource "aws_s3_bucket_website_configuration" "todo_app_website" {
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
+}
+
+# Public access configuration
+resource "aws_s3_bucket_public_access_block" "todo_app_block" {
   bucket = aws_s3_bucket.todo_app_bucket.id
 
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+# Ownership controls
+resource "aws_s3_bucket_ownership_controls" "todo_app" {
+  bucket = aws_s3_bucket.todo_app_bucket.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+# Bucket ACL
+resource "aws_s3_bucket_acl" "todo_app" {
+  depends_on = [
+    aws_s3_bucket_ownership_controls.todo_app,
+    aws_s3_bucket_public_access_block.todo_app_block,
+  ]
+  bucket = aws_s3_bucket.todo_app_bucket.id
+  acl    = "private" # Private even with public policy for CloudFront
+}
+
+# Website configuration
+resource "aws_s3_bucket_website_configuration" "todo_app_website" {
+  bucket = aws_s3_bucket.todo_app_bucket.id
   index_document {
     suffix = "index.html"
   }
-
   error_document {
     key = "index.html"
   }
 }
 
+# CloudFront Origin Access Identity
+resource "aws_cloudfront_origin_access_identity" "todo_app" {
+  comment = "OAI for todo app"
+}
 
+# Bucket policy for CloudFront access only
 resource "aws_s3_bucket_policy" "todo_app_policy" {
-  bucket = aws_s3_bucket.todo_app_bucket.id
-
+  depends_on = [aws_s3_bucket_public_access_block.todo_app_block]
+  bucket     = aws_s3_bucket.todo_app_bucket.id
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Sid       = "PublicReadGetObject",
-        Effect    = "Allow",
-        Principal = "*",
-        Action    = "s3:GetObject",
-        Resource  = "${aws_s3_bucket.todo_app_bucket.arn}/*"
+        Effect = "Allow",
+        Principal = {
+          AWS = aws_cloudfront_origin_access_identity.todo_app.iam_arn
+        },
+        Action   = "s3:GetObject",
+        Resource = "${aws_s3_bucket.todo_app_bucket.arn}/*"
+      },
+      {
+        Effect = "Allow",
+        Principal = {
+          AWS = aws_cloudfront_origin_access_identity.todo_app.iam_arn
+        },
+        Action   = "s3:ListBucket",
+        Resource = aws_s3_bucket.todo_app_bucket.arn
       }
     ]
   })
+}
+
+# CloudFront distribution
+resource "aws_cloudfront_distribution" "todo_app" {
+  depends_on = [aws_s3_bucket_policy.todo_app_policy]
+
+  origin {
+    domain_name = aws_s3_bucket.todo_app_bucket.bucket_regional_domain_name
+    origin_id   = "S3-todo-app"
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.todo_app.cloudfront_access_identity_path
+    }
+  }
+
+  enabled             = true
+  is_ipv6_enabled     = true
+  default_root_object = "index.html"
+  price_class         = "PriceClass_100" # Use only North America and Europe
+
+  default_cache_behavior {
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "S3-todo-app"
+    compress         = true
+
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 3600
+    max_ttl                = 86400
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
+
+  custom_error_response {
+    error_code         = 403
+    response_code      = 200
+    response_page_path = "/index.html"
+  }
+
+  custom_error_response {
+    error_code         = 404
+    response_code      = 200
+    response_page_path = "/index.html"
+  }
+}
+
+# Outputs
+output "cloudfront_url" {
+  value = "https://${aws_cloudfront_distribution.todo_app.domain_name}"
+}
+
+output "s3_bucket_name" {
+  value = aws_s3_bucket.todo_app_bucket.id
 }

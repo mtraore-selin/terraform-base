@@ -174,7 +174,9 @@ const Transfer = () => {
               const maxSizeMB = maxFileSize / (1024 * 1024);
 
               showToast(
-                `File size is too large (${formatMB.format(fileSizeMB)}/${formatMB.format(maxSizeMB)})`,
+                `File size is too large (${formatMB.format(fileSizeMB)}/${formatMB.format(
+                  maxSizeMB,
+                )})`,
                 { type: "error" },
               );
               return;

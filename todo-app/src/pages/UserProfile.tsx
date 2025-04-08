@@ -260,10 +260,10 @@ const UserProfile = () => {
             userName.length > USER_NAME_MAX_LENGTH
               ? `Name exceeds ${USER_NAME_MAX_LENGTH} characters`
               : userName.length > 0 && userName !== name
-                ? `${userName.length}/${USER_NAME_MAX_LENGTH}`
-                : userName === name && name !== ""
-                  ? "New username matches old one."
-                  : ""
+              ? `${userName.length}/${USER_NAME_MAX_LENGTH}`
+              : userName === name && name !== ""
+              ? "New username matches old one."
+              : ""
           }
           autoComplete="given-name"
         />

@@ -1,0 +1,112 @@
+name: Deploy React App to S3 + CloudFront
+
+on:
+push:
+branches: - main - feat/deploy
+
+jobs:
+lint-react:
+name: Lint React App
+runs-on: ubuntu-latest
+defaults:
+run:
+working-directory: todo-app
+steps: - uses: actions/checkout@v3 - uses: actions/setup-node@v4
+with:
+node-version: "18" - run: yarn install --frozen-lockfile - run: yarn lint
+
+terraform:
+name: Terraform Format & Validate
+runs-on: ubuntu-latest
+environment: production
+
+    outputs:
+      bucket_name: ${{ steps.export.outputs.bucket_name }}
+      cloudfront_id: ${{ steps.export.outputs.cloudfront_id }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.11.3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Format
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Terraform Apply
+        run: terraform apply tfplan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Export Outputs
+        id: export
+        run: |
+          echo "bucket_name=$(terraform output -raw s3_bucket_name)" >> "$GITHUB_OUTPUT"
+          echo "cloudfront_id=$(terraform output -raw cloudfront_distribution_id)" >> "$GITHUB_OUTPUT"
+
+deploy:
+name: Deploy React App
+needs: terraform
+runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "yarn"
+          cache-dependency-path: todo-app/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        working-directory: todo-app
+
+      - name: Build project
+        run: yarn run build
+        working-directory: todo-app
+
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+
+      - name: Deploy to S3 with proper caching
+        run: |
+          aws s3 sync todo-app/dist s3://todo-app-prod
+        # run: |
+        #   aws s3 sync todo-app/dist/ s3://${{ needs.terraform.outputs.bucket_name }}/ \
+        #     --delete \
+        #     --cache-control "max-age=31536000,public" \
+        #     --exclude "index.html" \
+        #     --exclude "asset-manifest.json"
+
+        #   aws s3 sync todo-app/dist/ s3://${{ needs.terraform.outputs.bucket_name }}/ \
+        #     --delete \
+        #     --cache-control "no-cache,no-store,must-revalidate" \
+        #     --include "index.html" \
+        #     --include "asset-manifest.json"
+
+        #   aws cloudfront create-invalidation \
+        #     --distribution-id ${{ needs.terraform.outputs.cloudfront_id }} \
+        #     --paths "/*"
