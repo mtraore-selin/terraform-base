@@ -99,20 +99,4 @@ jobs:
 
       - name: Deploy to S3 with proper caching
         run: |
-          aws s3 sync todo-app/dist s3://todo-app-prod
-        # run: |
-        #   aws s3 sync todo-app/dist/ s3://${{ needs.terraform.outputs.bucket_name }}/ \
-        #     --delete \
-        #     --cache-control "max-age=31536000,public" \
-        #     --exclude "index.html" \
-        #     --exclude "asset-manifest.json"
-
-        #   aws s3 sync todo-app/dist/ s3://${{ needs.terraform.outputs.bucket_name }}/ \
-        #     --delete \
-        #     --cache-control "no-cache,no-store,must-revalidate" \
-        #     --include "index.html" \
-        #     --include "asset-manifest.json"
-
-        #   aws cloudfront create-invalidation \
-        #     --distribution-id ${{ needs.terraform.outputs.cloudfront_id }} \
-        #     --paths "/*"
+          aws s3 sync todo-app/dist s3://ttodo-app-gmdt-prod
