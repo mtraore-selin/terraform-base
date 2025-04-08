@@ -127,7 +127,7 @@ resource "aws_instance" "prod_node" {
 
 # React deployment
 resource "aws_s3_bucket" "todo_app_bucket" {
-  bucket = "todo-app-gmdt-prod"
+  bucket = "todo-app-gmdt-prod-01"
   tags = {
     Name = "TodoAppBucket"
   }

@@ -99,4 +99,4 @@ jobs:
 
       - name: Deploy to S3 with proper caching
         run: |
-          aws s3 sync todo-app/dist s3://ttodo-app-gmdt-prod
+          aws s3 sync todo-app/dist s3://todo-app-gmdt-prod-01
